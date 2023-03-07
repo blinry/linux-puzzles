@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<title>Lua interpreter</title>
+
+<script src="libv86.js"></script>
+<script>
+    "use strict"
+
+    window.onload = function () {
+        var emulator = new V86Starter({
+            wasm_path: "v86.wasm",
+            memory_size: 32 * 1024 * 1024,
+            vga_memory_size: 2 * 1024 * 1024,
+
+            screen_container: document.getElementById("screen_container"),
+
+            bios: {
+                url: "seabios.bin",
+            },
+            vga_bios: {
+                url: "vgabios.bin",
+            },
+            bzimage: {
+                url: "buildroot-bzimage.bin",
+            },
+            autostart: true,
+        })
+
+        var data = ""
+        var do_output = false
+
+        emulator.add_listener("serial0-output-char", function (char) {
+            if (char !== "\r") {
+                data += char
+            }
+
+            if (do_output) {
+                document.getElementById("output").textContent += char
+            }
+
+            if (data.endsWith("~% ")) {
+                console.log("Now ready")
+                document.getElementById("status").textContent = "Ready.\n"
+                document.getElementById("command").disabled = false
+                document.getElementById("command").focus()
+                do_output = false
+            }
+        })
+
+        document.getElementById("command").onkeydown = function (e) {
+            if (e.which == 13) {
+                var code = document.getElementById("command").value
+                emulator.serial0_send(code + "\n")
+
+                document.getElementById("command").value = ""
+                document.getElementById("command").disabled = true
+                document.getElementById("status").textContent = "Running ...\n"
+
+                do_output = true
+            }
+        }
+    }
+
+    // https://gist.github.com/creationix/2502704
+    // Implement bash string escaping.
+    function bashEscape(arg) {
+        arg = arg.replace(/\t+/g, "")
+        return (
+            "'" +
+            arg.replace(/'+/g, function (val) {
+                return "'" + val.replace(/'/g, "\\'") + "'"
+            }) +
+            "'"
+        )
+    }
+</script>
+
+<textarea id="output" rows="20" cols="80"></textarea><br />
+<input id="command" style="width: 30rem" disabled />
+<br />
+<hr />
+<pre id="status">Wait for boot ...</pre>
+
+<hr />
+
+<div id="screen_container">
+    <div
+        style="white-space: pre; font: 14px monospace; line-height: 14px"
+    ></div>
+    <canvas style="display: none"></canvas>
+</div>
