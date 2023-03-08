@@ -1,190 +1,283 @@
 <!DOCTYPE html>
-<title>Lua interpreter</title>
-
-<script src="libv86.js"></script>
-
-<textarea id="output" rows="20" cols="80"></textarea><br />
-<input id="command" style="width: 30rem" />
-<br />
-<hr />
-<pre id="status">Wait for boot ...</pre>
-
-<hr />
-
-<div id="screen_container">
-    <div
-        style="white-space: pre; font: 14px monospace; line-height: 14px"
-    ></div>
-    <canvas style="display: none"></canvas>
-</div>
-
-<br />
-<input id="save_restore" type="button" value="Save state" />
-<input id="save_file" type="button" value="Save state to file" />
-Restore from file: <input id="restore_file" type="file" />
-
-<script>
-    "use strict"
-
-    let restoreState = true
-
-    window.onload = function () {
-        let config = {
-            wasm_path: "v86.wasm",
-            memory_size: 64 * 1024 * 1024,
-            vga_memory_size: 2 * 1024 * 1024,
-            screen_container: document.getElementById("screen_container"),
-            bios: {
-                url: "seabios.bin",
-            },
-            vga_bios: {
-                url: "vgabios.bin",
-            },
-            cdrom: {
-                url: "image.iso",
-            },
-            autostart: true,
-        }
-
-        if (restoreState) {
-            config.initial_state = {
-                url: "booted-state.bin",
+<html>
+    <head>
+        <script src="libv86.js"></script>
+        <style>
+            body {
+                display: flex;
             }
-        }
-
-        var emulator = (window.emulator = new V86Starter(config))
-        // check if the emulator is running every 100 ms. If it is, call run() and stop the checking
-        var interval = setInterval(() => {
-            if (emulator.is_running()) {
-                clearInterval(interval)
-                init()
+            #debug {
+                display: none;
             }
-        }, 100)
+        </style>
+    </head>
+    <body>
+        <div>
+            <h1>A Hitchhiker's Guide to <code>/proc</code></h1>
 
-        function init() {
-            //
-        }
+            <p>
+                Let's explore the <code>/proc</code> filesystem on Linux! Go on,
+                take a look inside!
+            </p>
 
-        var data = ""
+            <p>
+                When I started writing this article, the only thing I knew about
+                was the file <code>/proc/cpuinfo</code>, which can tell you some
+                things about your machine's CPUs!
+            </p>
 
-        //emulator.add_listener("serial0-output-char", function (char) {
-        //    if (char !== "\r") {
-        //        data += char
-        //    }
+            <p>
+                <b>What's the clock speed this CPU runs at?</b>
+                <input data-answer="1000" /> MHz
+            </p>
 
-        //    if (do_output) {
-        //        document.getElementById("output").textContent += char
-        //    }
+            <p>
+                But more importantly, there is a directory for every running
+                process! You can use <code>echo $$</code> to find out the
+                process ID of your shell!
+            </p>
 
-        //    if (data.endsWith("# ")) {
-        //        console.log("Now ready")
-        //        document.getElementById("status").textContent = "Ready.\n"
-        //        //document.getElementById("command").disabled = false
-        //        document.getElementById("command").focus()
-        //        do_output = false
-        //    }
-        //})
+            <p>
+                <b>What's the process ID of your shell?</b>
+                <input data-answer="???" />
+            </p>
 
-        document.getElementById("command").onkeydown = async function (e) {
-            if (e.which == 13) {
-                var code = document.getElementById("command").value
-                document.getElementById("command").value = ""
-                run(code).then((output) => {
-                    // check if a /tmp/file exists
-                    run(
+            <p>
+                So in <code>/proc/YOURID</code>, you can find all kinds of
+                useful info about that process!
+            </p>
+
+            <p>
+                <b
+                    >What is the current working directory (cwd) of your
+                    process? (Note: use <code>ls -l</code> to show the target of
+                    a symlink)</b
+                >
+                <input />
+            </p>
+
+            <p><code>environ</code> contains the environment variables the process was started with.</b></p>
+
+            <p>
+                <b
+                    >What's the value of the TERM variable of your shell?</b
+                >
+                <input />
+            </p>
+        </div>
+        <div>
+            <div id="debug">
+                <textarea id="output" rows="20" cols="80"></textarea><br />
+                <input id="command" style="width: 30rem" />
+                <br />
+                <hr />
+            </div>
+
+            <div id="screen_container">
+                <div
+                    style="
+                        white-space: pre;
+                        font: 14px monospace;
+                        line-height: 14px;
+                    "
+                ></div>
+                <canvas style="display: none"></canvas>
+            </div>
+
+            <br />
+            <input id="save_restore" type="button" value="Save state" />
+            <input id="save_file" type="button" value="Save state to file" />
+            Restore from file: <input id="restore_file" type="file" />
+        </div>
+
+        <script>
+            "use strict"
+
+            let restoreState = true
+
+            function run(cmd) {
+                emulator.serial0_send(cmd + "\n")
+
+                return new Promise((resolve, reject) => {
+                    var output = ""
+                    var listener = (char) => {
+                        if (char !== "\r") {
+                            output += char
+                        }
+
+                        document.getElementById("output").textContent += char
+                        document.getElementById("output").scrollTop =
+                            document.getElementById("output").scrollHeight
+
+                        if (output.endsWith("# ")) {
+                            emulator.remove_listener(
+                                "serial0-output-char",
+                                listener
+                            )
+                            let outputWithoutPrompt = output.slice(0, -4)
+                            let outputWithoutFirstLine =
+                                outputWithoutPrompt.slice(
+                                    outputWithoutPrompt.indexOf("\n") + 1
+                                )
+                            emulator.remove_listener(
+                                "serial0-output-char",
+                                listener
+                            )
+                            resolve(outputWithoutFirstLine)
+                        }
+                    }
+                    emulator.add_listener("serial0-output-char", listener)
                 })
             }
-        }
-    }
+            window.run = run
 
-    // https://gist.github.com/creationix/2502704
-    // Implement bash string escaping.
-    function bashEscape(arg) {
-        arg = arg.replace(/\t+/g, "")
-        return (
-            "'" +
-            arg.replace(/'+/g, function (val) {
-                return "'" + val.replace(/'/g, "\\'") + "'"
-            }) +
-            "'"
-        )
-    }
-
-    var state
-
-    document.getElementById("save_restore").onclick = async function () {
-        var button = this
-
-        if (state) {
-            button.value = "Save state"
-            await emulator.restore_state(state)
-            state = undefined
-        } else {
-            const new_state = await emulator.save_state()
-            console.log("Saved state of " + new_state.byteLength + " bytes")
-            button.value = "Restore state"
-            state = new_state
-        }
-
-        button.blur()
-    }
-
-    document.getElementById("save_file").onclick = async function () {
-        const new_state = await emulator.save_state()
-        var a = document.createElement("a")
-        a.download = "v86state.bin"
-        a.href = window.URL.createObjectURL(new Blob([new_state]))
-        a.dataset.downloadurl =
-            "application/octet-stream:" + a.download + ":" + a.href
-        a.click()
-
-        this.blur()
-    }
-
-    document.getElementById("restore_file").onchange = function () {
-        if (this.files.length) {
-            var filereader = new FileReader()
-            emulator.stop()
-
-            filereader.onload = async function (e) {
-                await emulator.restore_state(e.target.result)
-                emulator.run()
+            async function test(condition) {
+                let result = await run(
+                    `test ${condition} && echo 'yes' || echo 'no'`
+                )
+                return result == "yes\n"
             }
 
-            filereader.readAsArrayBuffer(this.files[0])
-
-            this.value = ""
-        }
-
-        this.blur()
-    }
-
-    function run(cmd) {
-        emulator.serial0_send(cmd + "\n")
-
-        return new Promise((resolve, reject) => {
-            var output = ""
-            var listener = (char) => {
-                if (char !== "\r") {
-                    output += char
+            window.onload = function () {
+                let config = {
+                    wasm_path: "v86.wasm",
+                    memory_size: 64 * 1024 * 1024,
+                    vga_memory_size: 2 * 1024 * 1024,
+                    screen_container:
+                        document.getElementById("screen_container"),
+                    bios: {
+                        url: "seabios.bin",
+                    },
+                    vga_bios: {
+                        url: "vgabios.bin",
+                    },
+                    cdrom: {
+                        url: "image.iso",
+                    },
+                    autostart: true,
                 }
 
-                document.getElementById("output").textContent += char
-                document.getElementById("output").scrollTop =
-                    document.getElementById("output").scrollHeight
+                if (restoreState) {
+                    config.initial_state = {
+                        url: "booted-state.bin",
+                    }
+                }
 
-                if (output.endsWith("# ")) {
-                    emulator.remove_listener("serial0-output-char", listener)
-                    let outputWithoutPrompt = output.slice(0, -4)
-                    let outputWithoutFirstLine = outputWithoutPrompt.slice(
-                        outputWithoutPrompt.indexOf("\n") + 1
-                    )
-                    emulator.remove_listener("serial0-output-char", listener)
-                    resolve(outputWithoutFirstLine)
+                var emulator = (window.emulator = new V86Starter(config))
+                // check if the emulator is running every 100 ms. If it is, call run() and stop the checking
+                var interval = setInterval(() => {
+                    if (emulator.is_running()) {
+                        clearInterval(interval)
+                        init()
+                    }
+                }, 100)
+
+                async function init() {
+                    await run("mkdir /tmp/repo")
+                    await run("cd /tmp/repo")
+                    await run("git init /tmp/repo")
+                }
+
+                var data = ""
+
+                //emulator.add_listener("serial0-output-char", function (char) {
+                //    if (char !== "\r") {
+                //        data += char
+                //    }
+
+                //    if (do_output) {
+                //        document.getElementById("output").textContent += char
+                //    }
+
+                //    if (data.endsWith("# ")) {
+                //        console.log("Now ready")
+                //        //document.getElementById("command").disabled = false
+                //        document.getElementById("command").focus()
+                //        do_output = false
+                //    }
+                //})
+
+                document.getElementById("command").onkeydown = async function (
+                    e
+                ) {
+                    if (e.which == 13) {
+                        var code = document.getElementById("command").value
+                        document.getElementById("command").value = ""
+                        run(code).then(async (output) => {
+                            let objects = await run(
+                                "git cat-file --batch-check='%(objectname) %(objecttype)' --batch-all-objects"
+                            )
+                            document.getElementById("objects").textContent =
+                                objects
+                        })
+                    }
                 }
             }
-            emulator.add_listener("serial0-output-char", listener)
-        })
-    }
-    window.run = run
-</script>
+
+            // https://gist.github.com/creationix/2502704
+            // Implement bash string escaping.
+            function bashEscape(arg) {
+                arg = arg.replace(/\t+/g, "")
+                return (
+                    "'" +
+                    arg.replace(/'+/g, function (val) {
+                        return "'" + val.replace(/'/g, "\\'") + "'"
+                    }) +
+                    "'"
+                )
+            }
+
+            var state
+
+            document.getElementById("save_restore").onclick =
+                async function () {
+                    var button = this
+
+                    if (state) {
+                        button.value = "Save state"
+                        await emulator.restore_state(state)
+                        state = undefined
+                    } else {
+                        const new_state = await emulator.save_state()
+                        console.log(
+                            "Saved state of " + new_state.byteLength + " bytes"
+                        )
+                        button.value = "Restore state"
+                        state = new_state
+                    }
+
+                    button.blur()
+                }
+
+            document.getElementById("save_file").onclick = async function () {
+                const new_state = await emulator.save_state()
+                var a = document.createElement("a")
+                a.download = "v86state.bin"
+                a.href = window.URL.createObjectURL(new Blob([new_state]))
+                a.dataset.downloadurl =
+                    "application/octet-stream:" + a.download + ":" + a.href
+                a.click()
+
+                this.blur()
+            }
+
+            document.getElementById("restore_file").onchange = function () {
+                if (this.files.length) {
+                    var filereader = new FileReader()
+                    emulator.stop()
+
+                    filereader.onload = async function (e) {
+                        await emulator.restore_state(e.target.result)
+                        emulator.run()
+                    }
+
+                    filereader.readAsArrayBuffer(this.files[0])
+
+                    this.value = ""
+                }
+
+                this.blur()
+            }
+        </script>
+    </body>
+</html>
