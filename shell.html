@@ -2,60 +2,97 @@
 <title>Lua interpreter</title>
 
 <script src="libv86.js"></script>
+
+<textarea id="output" rows="20" cols="80"></textarea><br />
+<input id="command" style="width: 30rem" />
+<br />
+<hr />
+<pre id="status">Wait for boot ...</pre>
+
+<hr />
+
+<div id="screen_container">
+    <div
+        style="white-space: pre; font: 14px monospace; line-height: 14px"
+    ></div>
+    <canvas style="display: none"></canvas>
+</div>
+
+<br />
+<input id="save_restore" type="button" value="Save state" />
+<input id="save_file" type="button" value="Save state to file" />
+Restore from file: <input id="restore_file" type="file" />
+
 <script>
     "use strict"
 
+    let restoreState = true
+
     window.onload = function () {
-        var emulator = new V86Starter({
+        let config = {
             wasm_path: "v86.wasm",
-            memory_size: 32 * 1024 * 1024,
+            memory_size: 64 * 1024 * 1024,
             vga_memory_size: 2 * 1024 * 1024,
-
             screen_container: document.getElementById("screen_container"),
-
             bios: {
                 url: "seabios.bin",
             },
             vga_bios: {
                 url: "vgabios.bin",
             },
-            bzimage: {
-                url: "buildroot-bzimage.bin",
+            cdrom: {
+                url: "image.iso",
             },
             autostart: true,
-        })
+        }
+
+        if (restoreState) {
+            config.initial_state = {
+                url: "booted-state.bin",
+            }
+        }
+
+        var emulator = (window.emulator = new V86Starter(config))
+        // check if the emulator is running every 100 ms. If it is, call run() and stop the checking
+        var interval = setInterval(() => {
+            if (emulator.is_running()) {
+                clearInterval(interval)
+                init()
+            }
+        }, 100)
+
+        function init() {
+            //
+        }
 
         var data = ""
-        var do_output = false
 
-        emulator.add_listener("serial0-output-char", function (char) {
-            if (char !== "\r") {
-                data += char
-            }
+        //emulator.add_listener("serial0-output-char", function (char) {
+        //    if (char !== "\r") {
+        //        data += char
+        //    }
 
-            if (do_output) {
-                document.getElementById("output").textContent += char
-            }
+        //    if (do_output) {
+        //        document.getElementById("output").textContent += char
+        //    }
 
-            if (data.endsWith("~% ")) {
-                console.log("Now ready")
-                document.getElementById("status").textContent = "Ready.\n"
-                document.getElementById("command").disabled = false
-                document.getElementById("command").focus()
-                do_output = false
-            }
-        })
+        //    if (data.endsWith("# ")) {
+        //        console.log("Now ready")
+        //        document.getElementById("status").textContent = "Ready.\n"
+        //        //document.getElementById("command").disabled = false
+        //        document.getElementById("command").focus()
+        //        do_output = false
+        //    }
+        //})
 
-        document.getElementById("command").onkeydown = function (e) {
+        document.getElementById("command").onkeydown = async function (e) {
             if (e.which == 13) {
                 var code = document.getElementById("command").value
-                emulator.serial0_send(code + "\n")
-
                 document.getElementById("command").value = ""
-                document.getElementById("command").disabled = true
-                document.getElementById("status").textContent = "Running ...\n"
-
-                do_output = true
+                run(code).then((output) => {
+                    // check if a /tmp/file exists
+                    run(
+                })
             }
         }
     }
@@ -72,19 +109,82 @@
             "'"
         )
     }
+
+    var state
+
+    document.getElementById("save_restore").onclick = async function () {
+        var button = this
+
+        if (state) {
+            button.value = "Save state"
+            await emulator.restore_state(state)
+            state = undefined
+        } else {
+            const new_state = await emulator.save_state()
+            console.log("Saved state of " + new_state.byteLength + " bytes")
+            button.value = "Restore state"
+            state = new_state
+        }
+
+        button.blur()
+    }
+
+    document.getElementById("save_file").onclick = async function () {
+        const new_state = await emulator.save_state()
+        var a = document.createElement("a")
+        a.download = "v86state.bin"
+        a.href = window.URL.createObjectURL(new Blob([new_state]))
+        a.dataset.downloadurl =
+            "application/octet-stream:" + a.download + ":" + a.href
+        a.click()
+
+        this.blur()
+    }
+
+    document.getElementById("restore_file").onchange = function () {
+        if (this.files.length) {
+            var filereader = new FileReader()
+            emulator.stop()
+
+            filereader.onload = async function (e) {
+                await emulator.restore_state(e.target.result)
+                emulator.run()
+            }
+
+            filereader.readAsArrayBuffer(this.files[0])
+
+            this.value = ""
+        }
+
+        this.blur()
+    }
+
+    function run(cmd) {
+        emulator.serial0_send(cmd + "\n")
+
+        return new Promise((resolve, reject) => {
+            var output = ""
+            var listener = (char) => {
+                if (char !== "\r") {
+                    output += char
+                }
+
+                document.getElementById("output").textContent += char
+                document.getElementById("output").scrollTop =
+                    document.getElementById("output").scrollHeight
+
+                if (output.endsWith("# ")) {
+                    emulator.remove_listener("serial0-output-char", listener)
+                    let outputWithoutPrompt = output.slice(0, -4)
+                    let outputWithoutFirstLine = outputWithoutPrompt.slice(
+                        outputWithoutPrompt.indexOf("\n") + 1
+                    )
+                    emulator.remove_listener("serial0-output-char", listener)
+                    resolve(outputWithoutFirstLine)
+                }
+            }
+            emulator.add_listener("serial0-output-char", listener)
+        })
+    }
+    window.run = run
 </script>
-
-<textarea id="output" rows="20" cols="80"></textarea><br />
-<input id="command" style="width: 30rem" disabled />
-<br />
-<hr />
-<pre id="status">Wait for boot ...</pre>
-
-<hr />
-
-<div id="screen_container">
-    <div
-        style="white-space: pre; font: 14px monospace; line-height: 14px"
-    ></div>
-    <canvas style="display: none"></canvas>
-</div>
