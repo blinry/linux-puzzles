@@ -1,108 +1,39 @@
-<!DOCTYPE html> <title>Basic Emulator</title>
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="libv86.js"></script>
+        <link rel="stylesheet" href="styles.css" />
+        <script src="script.js" defer></script>
+    </head>
+    <body>
+        <div id="content">
+            <h2 id="title"></h2>
 
-<script src="libv86.js"></script>
+            <div id="description"></div>
+            <br />
+            <input id="flag" /><button id="submit">Submit solution</button>
+            <br />
+            <br />
+            <button id="prev">&lt;</button>
+            <button id="next">&gt;</button>
+        </div>
+        <div>
+            <div id="debug">
+                <textarea id="output" rows="20" cols="80"></textarea><br />
+                <input id="command" style="width: 30rem" />
+                <br />
+                <hr />
+            </div>
 
-<!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
-<div id="screen_container">
-    <div
-        style="white-space: pre; font: 14px monospace; line-height: 14px"
-    ></div>
-    <canvas style="display: none"></canvas>
-    <br />
-    <input id="save_restore" type="button" value="Save state" />
-    <input id="save_file" type="button" value="Save state to file" />
-    Restore from file: <input id="restore_file" type="file" />
-</div>
+            <div id="screen_container">
+                <div id="screen"></div>
+                <canvas style="display: none"></canvas>
+            </div>
 
-<script>
-    "use strict"
-
-    window.onload = function () {
-        var emulator = (window.emulator = new V86Starter({
-            wasm_path: "v86.wasm",
-            memory_size: 64 * 1024 * 1024,
-            vga_memory_size: 2 * 1024 * 1024,
-            screen_container: document.getElementById("screen_container"),
-            bios: {
-                url: "seabios.bin",
-            },
-            vga_bios: {
-                url: "vgabios.bin",
-            },
-            cdrom: {
-                url: "image.iso",
-            },
-            initial_state: {
-                url: "booted-state.bin",
-            },
-            autostart: true,
-            async: true,
-        }))
-
-        //var filereader = new FileReader()
-
-        //filereader.onload = async function (e) {
-        //    await emulator.restore_state(e.target.result)
-        //    emulator.run()
-        //}
-
-        //fetch("booted-state.bin.gz").then(async (response) => {
-        //    const decompressionStream = new DecompressionStream("gzip")
-        //    const decompressedStream =
-        //        response.body.pipeThrough(decompressionStream)
-        //    const decompressedBlob = await new Response(
-        //        decompressedStream
-        //    ).blob()
-        //    filereader.readAsArrayBuffer(decompressedBlob)
-        //})
-    }
-
-    var state
-
-    document.getElementById("save_restore").onclick = async function () {
-        var button = this
-
-        if (state) {
-            button.value = "Save state"
-            await emulator.restore_state(state)
-            state = undefined
-        } else {
-            const new_state = await emulator.save_state()
-            console.log("Saved state of " + new_state.byteLength + " bytes")
-            button.value = "Restore state"
-            state = new_state
-        }
-
-        button.blur()
-    }
-
-    document.getElementById("save_file").onclick = async function () {
-        const new_state = await emulator.save_state()
-        var a = document.createElement("a")
-        a.download = "v86state.bin"
-        a.href = window.URL.createObjectURL(new Blob([new_state]))
-        a.dataset.downloadurl =
-            "application/octet-stream:" + a.download + ":" + a.href
-        a.click()
-
-        this.blur()
-    }
-
-    document.getElementById("restore_file").onchange = function () {
-        if (this.files.length) {
-            var filereader = new FileReader()
-            emulator.stop()
-
-            filereader.onload = async function (e) {
-                await emulator.restore_state(e.target.result)
-                emulator.run()
-            }
-
-            filereader.readAsArrayBuffer(this.files[0])
-
-            this.value = ""
-        }
-
-        this.blur()
-    }
-</script>
+            <br />
+            <input id="save_restore" type="button" value="Save state" />
+            <input id="save_file" type="button" value="Save state to file" />
+            Restore from file: <input id="restore_file" type="file" />
+        </div>
+    </body>
+</html>
