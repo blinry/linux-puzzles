@@ -5,65 +5,35 @@
         <style>
             body {
                 display: flex;
+                font-size: 150%;
+                gap: 1rem;
             }
             #debug {
                 display: none;
             }
+            p {
+                margin-bottom: 1em;
+            }
+            #screen_container {
+            }
+            #screen {
+                white-space: pre;
+                font: 1em monospace;
+                line-height: 110%;
+            }
         </style>
     </head>
     <body>
-        <div>
-            <h1>A Hitchhiker's Guide to <code>/proc</code></h1>
+        <div id="content">
+            <h2 id="title"></h2>
 
-            <p>
-                Let's explore the <code>/proc</code> filesystem on Linux! Go on,
-                take a look inside!
-            </p>
-
-            <p>
-                When I started writing this article, the only thing I knew about
-                was the file <code>/proc/cpuinfo</code>, which can tell you some
-                things about your machine's CPUs!
-            </p>
-
-            <p>
-                <b>What's the clock speed this CPU runs at?</b>
-                <input data-answer="1000" /> MHz
-            </p>
-
-            <p>
-                But more importantly, there is a directory for every running
-                process! You can use <code>echo $$</code> to find out the
-                process ID of your shell!
-            </p>
-
-            <p>
-                <b>What's the process ID of your shell?</b>
-                <input data-answer="???" />
-            </p>
-
-            <p>
-                So in <code>/proc/YOURID</code>, you can find all kinds of
-                useful info about that process!
-            </p>
-
-            <p>
-                <b
-                    >What is the current working directory (cwd) of your
-                    process? (Note: use <code>ls -l</code> to show the target of
-                    a symlink)</b
-                >
-                <input />
-            </p>
-
-            <p><code>environ</code> contains the environment variables the process was started with.</b></p>
-
-            <p>
-                <b
-                    >What's the value of the TERM variable of your shell?</b
-                >
-                <input />
-            </p>
+            <div id="description"></div>
+            <br />
+            <input id="flag" /><button id="submit">Submit</button>
+            <br />
+            <br />
+            <button id="prev">&lt;</button>
+            <button id="next">&gt;</button>
         </div>
         <div>
             <div id="debug">
@@ -74,13 +44,7 @@
             </div>
 
             <div id="screen_container">
-                <div
-                    style="
-                        white-space: pre;
-                        font: 14px monospace;
-                        line-height: 14px;
-                    "
-                ></div>
+                <div id="screen"></div>
                 <canvas style="display: none"></canvas>
             </div>
 
@@ -119,6 +83,10 @@
                                 outputWithoutPrompt.slice(
                                     outputWithoutPrompt.indexOf("\n") + 1
                                 )
+                            if (outputWithoutFirstLine.endsWith("\n")) {
+                                outputWithoutFirstLine =
+                                    outputWithoutFirstLine.slice(0, -1)
+                            }
                             emulator.remove_listener(
                                 "serial0-output-char",
                                 listener
@@ -135,7 +103,7 @@
                 let result = await run(
                     `test ${condition} && echo 'yes' || echo 'no'`
                 )
-                return result == "yes\n"
+                return result == "yes"
             }
 
             window.onload = function () {
@@ -154,6 +122,7 @@
                     cdrom: {
                         url: "image.iso.zst",
                     },
+                    disable_mouse: true,
                     autostart: true,
                 }
 
@@ -173,9 +142,7 @@
                 }, 100)
 
                 async function init() {
-                    await run("mkdir /tmp/repo")
-                    await run("cd /tmp/repo")
-                    await run("git init /tmp/repo")
+                    await nextLevel()
                 }
 
                 var data = ""
@@ -203,13 +170,14 @@
                     if (e.which == 13) {
                         var code = document.getElementById("command").value
                         document.getElementById("command").value = ""
-                        run(code).then(async (output) => {
-                            let objects = await run(
-                                "git cat-file --batch-check='%(objectname) %(objecttype)' --batch-all-objects"
-                            )
-                            document.getElementById("objects").textContent =
-                                objects
-                        })
+                        run(code)
+                        //.then(async (output) => {
+                        //let objects = await run(
+                        //    "git cat-file --batch-check='%(objectname) %(objecttype)' --batch-all-objects"
+                        //)
+                        //document.getElementById("objects").textContent =
+                        //    objects
+                        //})
                     }
                 }
             }
@@ -277,6 +245,129 @@
                 }
 
                 this.blur()
+            }
+        </script>
+        <script>
+            let levels = []
+
+            levels.push({
+                task: "Read the file called <b>readme</b>.",
+                setup: "echo FLAG > readme",
+                tools: ["ls", "cat"],
+            })
+
+            levels.push({
+                task: "Read the file called <b>spaces in this filename</b>.",
+                setup: "echo FLAG > 'spaces in this filename'",
+                tools: ["ls", "cat"],
+            })
+
+            levels.push({
+                task: "Find and read the hidden file",
+                setup: "echo FLAG > .hidden",
+                tools: ["ls", "cat"],
+            })
+
+            levels.push({
+                task: "Read the file called <b>-</b>.",
+                setup: "echo FLAG > -",
+                tools: ["ls", "cat"],
+                google: ["filename with dash"],
+            })
+
+            levels.push({
+                task: "Find the only line in <b>haystack</b> that occurs twice",
+                setup: `seq 1 5 | xargs -I{} sh -c "echo {} | md5sum | cut -d' ' -f1 >> haystack"
+                echo FLAG >> haystack
+                seq 10 17 | xargs -I{} sh -c "echo {} | md5sum | cut -d' ' -f1 >> haystack"
+                echo FLAG >> haystack
+                seq 20 23 | xargs -I{} sh -c "echo {} | md5sum | cut -d' ' -f1 >> haystack"
+                `,
+                tools: ["ls", "cat", "sort", "uniq"],
+            })
+
+            levels.push({
+                task: "Find the file in the Git repository <b>repo</b> that was deleted in the last commit",
+                setup: `mkdir repo
+                    cd repo
+                    git config --global init.defaultBranch main
+                    git config --global user.name 'Me'
+                    git config --global user.email 'test@example.com'
+                    git init
+                    echo FLAG > flag
+                    echo "The flag was deleted, ha ha! >:}" > this_is_not_the_flag
+                    git add .
+                    git commit -m 'Add flag'
+                    git rm flag
+                    git commit -m 'Delete flag'
+                `,
+                tools: ["cd", "ls", "git-checkout"],
+            })
+
+            let currentLevel = -1
+
+            async function nextLevel() {
+                currentLevel = (currentLevel + 1) % levels.length
+                await loadLevel(currentLevel)
+            }
+
+            async function prevLevel() {
+                currentLevel =
+                    (currentLevel - 1 + levels.length) % levels.length
+                await loadLevel(currentLevel)
+            }
+
+            async function loadLevel(i) {
+                let level = levels[i]
+
+                await run("cd /root")
+                //await run("rm -rf .* *")
+                let flag = await run("date | md5sum | cut -d' ' -f1")
+                level["flag"] = flag
+                await run(level.setup.replaceAll("FLAG", flag))
+
+                document.getElementById("title").innerHTML =
+                    "Level " + (currentLevel + 1)
+                document.getElementById("description").innerHTML = level.task
+                if (level.tools) {
+                    document.getElementById("description").innerHTML +=
+                        "<h3>Useful tools:</h3>"
+                    for (let tool of level.tools) {
+                        // link to https://man7.org/linux/man-pages/man1/TOOL.1.html
+                        document.getElementById(
+                            "description"
+                        ).innerHTML += `<a href="https://man7.org/linux/man-pages/man1/${tool}.1.html" target="_blank">${tool}</a> `
+                    }
+                }
+                if (level.google) {
+                    document.getElementById("description").innerHTML +=
+                        "<h3>Helpful Google searches:</h3>"
+                    for (let query of level.google) {
+                        document.getElementById(
+                            "description"
+                        ).innerHTML += `<a href="https://www.google.com/search?q=${query}" target="_blank">${query}</a> `
+                    }
+                }
+                document.getElementById("flag").value = ""
+            }
+
+            document.getElementById("prev").onclick = async function () {
+                await prevLevel()
+            }
+
+            document.getElementById("next").onclick = async function () {
+                await nextLevel()
+            }
+
+            document.getElementById("submit").onclick = async function () {
+                let flag = document.getElementById("flag").value
+                let level = levels[currentLevel]
+                if (flag == level.flag) {
+                    alert("Correct :)")
+                    await nextLevel()
+                } else {
+                    alert("Wrong flag")
+                }
             }
         </script>
     </body>
