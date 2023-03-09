@@ -176,7 +176,7 @@ levels.push({
 })
 
 levels.push({
-    task: "Find the file in the Git repository <b>repo</b> that was deleted in the last commit",
+    task: "Find the file in the Git repository <b>repo</b> that was deleted in the last commit.",
     setup: `mkdir repo
                     cd repo
                     git config --global init.defaultBranch main
@@ -189,6 +189,7 @@ levels.push({
                     git commit -m 'Add flag'
                     git rm flag
                     git commit -m 'Delete flag'
+                    cd ..
                 `,
     tools: ["cd", "ls", "git-checkout"],
 })
@@ -270,9 +271,15 @@ document.getElementById("submit").onclick = async function () {
     let flag = document.getElementById("flag").value
     let level = levels[currentLevel]
     if (flag == level.flag) {
-        alert("Correct :)")
+        alert("Correct :) Let's go to the next level!")
         await nextLevel()
     } else {
-        alert("Wrong flag")
+        alert("Wrong solution. Correct solution: " + level.flag)
+    }
+}
+
+document.getElementById("flag").onkeydown = async function (e) {
+    if (e.key == "Enter") {
+        document.getElementById("submit").click()
     }
 }

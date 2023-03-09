@@ -75,8 +75,18 @@ p,
     margin-bottom: 1em;
 }
 
+#screen_container {
+    background: black;
+    width: 1000px;
+    height: 700px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 #screen {
     white-space: pre;
-    font: 1.5em monospace;
+    font: 16px monospace;
     line-height: 110%;
+    transform: scale(1.5);
 }
