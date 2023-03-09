@@ -1,4 +1,5 @@
 let restoreState = true
+let emulator
 
 function run(cmd) {
     emulator.serial0_send(cmd + "\n")
@@ -10,7 +11,7 @@ function run(cmd) {
                 output += char
             }
 
-            document.getElementById("output").textContent += char
+            //document.getElementById("output").textContent += char
             document.getElementById("output").scrollTop =
                 document.getElementById("output").scrollHeight
 
@@ -43,6 +44,7 @@ window.onload = function () {
         memory_size: 64 * 1024 * 1024,
         vga_memory_size: 2 * 1024 * 1024,
         screen_container: document.getElementById("screen_container"),
+        serial_container_xtermjs: document.getElementById("output"),
         bios: {
             url: "seabios.bin",
         },
@@ -50,7 +52,7 @@ window.onload = function () {
             url: "vgabios.bin",
         },
         cdrom: {
-            url: "image.iso.zst",
+            url: "image.iso",
         },
         disable_mouse: true,
         autostart: true,
@@ -62,7 +64,7 @@ window.onload = function () {
         }
     }
 
-    var emulator = (window.emulator = new V86Starter(config))
+    emulator = window.emulator = new V86Starter(config)
     // check if the emulator is running every 100 ms. If it is, call run() and stop the checking
     var interval = setInterval(() => {
         if (emulator.is_running()) {
@@ -77,50 +79,13 @@ window.onload = function () {
 
     var data = ""
 
-    //emulator.add_listener("serial0-output-char", function (char) {
-    //    if (char !== "\r") {
-    //        data += char
-    //    }
-
-    //    if (do_output) {
-    //        document.getElementById("output").textContent += char
-    //    }
-
-    //    if (data.endsWith("# ")) {
-    //        console.log("Now ready")
-    //        //document.getElementById("command").disabled = false
-    //        document.getElementById("command").focus()
-    //        do_output = false
-    //    }
-    //})
-
     document.getElementById("command").onkeydown = async function (e) {
         if (e.which == 13) {
             var code = document.getElementById("command").value
             document.getElementById("command").value = ""
             run(code)
-            //.then(async (output) => {
-            //let objects = await run(
-            //    "git cat-file --batch-check='%(objectname) %(objecttype)' --batch-all-objects"
-            //)
-            //document.getElementById("objects").textContent =
-            //    objects
-            //})
         }
     }
-}
-
-// https://gist.github.com/creationix/2502704
-// Implement bash string escaping.
-function bashEscape(arg) {
-    arg = arg.replace(/\t+/g, "")
-    return (
-        "'" +
-        arg.replace(/'+/g, function (val) {
-            return "'" + val.replace(/'/g, "\\'") + "'"
-        }) +
-        "'"
-    )
 }
 
 var state
@@ -175,9 +140,9 @@ document.getElementById("restore_file").onchange = function () {
 let levels = []
 
 levels.push({
-    task: "Read the file called <b>readme</b>.",
+    task: "If you're not using a QWERTY keyboard, you can set your keyboard layout like this: <code>loadkeys de</code>. To find the first solution, read the file called <b>readme</b>.",
     setup: "echo FLAG > readme",
-    tools: ["ls", "cat"],
+    tools: ["loadkeys", "ls", "cat"],
 })
 
 levels.push({
