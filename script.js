@@ -152,7 +152,7 @@ levels.push({
 })
 
 levels.push({
-    task: "Find and read the hidden file",
+    task: "Find and read the hidden file.",
     setup: "echo FLAG > .hidden",
     tools: ["ls", "cat"],
 })
@@ -165,7 +165,7 @@ levels.push({
 })
 
 levels.push({
-    task: "Find the only line in <b>haystack</b> that occurs twice",
+    task: "Find the only line in <b>haystack</b> that occurs twice.",
     setup: `seq 1 5 | xargs -I{} sh -c "echo {} | md5sum | cut -d' ' -f1 >> haystack"
                 echo FLAG >> haystack
                 seq 10 17 | xargs -I{} sh -c "echo {} | md5sum | cut -d' ' -f1 >> haystack"
@@ -193,6 +193,18 @@ levels.push({
     tools: ["cd", "ls", "git-checkout"],
 })
 
+levels.push({
+    task: "Find the process ID of the <code>kswapd0</code> process.",
+    solution: "pidof kswapd0",
+    tools: ["ps", "pidof"],
+})
+
+levels.push({
+    task: "Find the version of the Linux kernel.",
+    solution: "uname -r",
+    tools: ["uname"],
+})
+
 let currentLevel = -1
 
 async function nextLevel() {
@@ -210,9 +222,16 @@ async function loadLevel(i) {
 
     await run("cd /root")
     //await run("rm -rf .* *")
-    let flag = await run("date | md5sum | cut -d' ' -f1")
-    level["flag"] = flag
-    await run(level.setup.replaceAll("FLAG", flag))
+
+    if (level.solution) {
+        level["flag"] = await run(level.solution)
+    } else {
+        level["flag"] = await run("date | md5sum | cut -d' ' -f1")
+    }
+
+    if (level.setup) {
+        await run(level.setup.replaceAll("FLAG", level["flag"]))
+    }
 
     document.getElementById("title").innerHTML = "Level " + (currentLevel + 1)
     document.getElementById("description").innerHTML =
