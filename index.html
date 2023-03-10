@@ -6,21 +6,18 @@
         <link href="styles.css" rel="stylesheet" />
         <script src="script.js" defer></script>
         <title>Linux Puzzles</title>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐧</text></svg>"
+        />
     </head>
     <body>
         <div id="content">
-            <h1>
-                Linux Puzzles
-                <div id="subtitle">
-                    a prototype by
-                    <a href="https://blinry.org" target="_blank">blinry</a>.
-                    <a
-                        href="https://github.com/blinry/linux-puzzles"
-                        target="_blank"
-                        >source code</a
-                    >
-                </div>
-            </h1>
+            <h1><a href="/">Linux Puzzles</a> 🐧</h1>
+            <div id="subtitle">
+                a prototype by
+                <a href="https://blinry.org" target="_blank">blinry</a>
+            </div>
 
             <div id="title_container">
                 <button id="prev">&lt;</button>
@@ -29,10 +26,17 @@
             </div>
 
             <div id="description">Booting Linux...</div>
-            <br />
+
             <input id="flag" /> <button id="submit">Submit solution</button>
+
+            <br /><br />
+            <hr />
             <br />
-            <br />
+            <span id="make-own">Customize this level!</span>
+            –
+            <a href="https://github.com/blinry/linux-puzzles" target="_blank"
+                >Source code on GitHub</a
+            >
         </div>
         <div>
             <div id="screen_container">
@@ -48,6 +52,32 @@
                     value="Save state to file"
                 />
                 Restore from file: <input id="restore_file" type="file" />
+            </div>
+        </div>
+        <div id="popup">
+            <div id="popup-background">
+                <div id="popup-close">x</div>
+                <form action="/" method="get">
+                    <h3>Task description</h3>
+                    <textarea name="task" id="level_task"></textarea>
+                    <h3>
+                        Script that outputs solution (leave blank to
+                        auto-generate)
+                    </h3>
+                    <textarea name="solution" id="level_solution"></textarea>
+                    <h3>Setup script (FLAG is expanded to solution)</h3>
+                    <textarea name="setup" id="level_setup"></textarea>
+                    <h3>Useful commands (will be linked to manpages)</h3>
+                    <textarea name="tools" id="level_tools"></textarea>
+                    <h3>Useful searches (will be linked to Google)</h3>
+                    <textarea name="searches" id="level_searches"></textarea>
+                    <br />
+                    <input
+                        type="submit"
+                        value="Create level! (Shareable URL)"
+                    />
+                    <input type="button" value="Clear fields" id="clear" />
+                </form>
             </div>
         </div>
     </body>

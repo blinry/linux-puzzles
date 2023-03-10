@@ -116,7 +116,45 @@ document.getElementById("restore_file").onchange = function () {
 
 // This is run after the emulator loads.
 async function init() {
-    await nextLevel()
+    if (window.location.search == "") {
+        await nextLevel()
+    } else {
+        // Remove empty URL parameters.
+        let params = new URLSearchParams(window.location.search)
+        let toDelete = []
+        for (let [key, value] of params) {
+            if (value == "") {
+                toDelete.push(key)
+            }
+        }
+        for (let key of toDelete) {
+            params.delete(key)
+        }
+        window.history.replaceState({}, "", "?" + params.toString())
+
+        currentLevel = 0
+        level = {}
+        if (params.get("task")) {
+            level.task = params.get("task")
+        }
+        if (params.get("setup")) {
+            level.setup = params.get("setup")
+        }
+        if (params.get("tools")) {
+            level.tools = params
+                .get("tools")
+                .split(",")
+                .map((x) => x.trim())
+        }
+        if (params.get("searches")) {
+            level.searches = params
+                .get("searches")
+                .split(",")
+                .map((x) => x.trim())
+        }
+        levels[0] = level
+        loadLevel(0)
+    }
 }
 
 let levels = []
@@ -143,7 +181,7 @@ levels.push({
     task: "Read the file called <b>-</b>",
     setup: "echo FLAG > -",
     tools: ["ls", "cat"],
-    google: ["filename with dash"],
+    searches: ["filename with dash"],
 })
 
 levels.push({
@@ -199,16 +237,28 @@ let currentLevel = -1
 
 async function nextLevel() {
     currentLevel = (currentLevel + 1) % levels.length
+    window.history.replaceState({}, "", window.location.pathname)
     await loadLevel(currentLevel)
 }
 
 async function prevLevel() {
     currentLevel = (currentLevel - 1 + levels.length) % levels.length
+    window.history.replaceState({}, "", window.location.pathname)
     await loadLevel(currentLevel)
 }
 
 async function loadLevel(i) {
     let level = levels[i]
+
+    document.getElementById("level_task").value = level.task || ""
+    document.getElementById("level_setup").value = level.setup || ""
+    document.getElementById("level_tools").value = level.tools || ""
+    document.getElementById("level_searches").value = level.searches || ""
+    document.getElementById("level_solution").value = level.solution || ""
+
+    if (!level.task) {
+        level.task = "(No description provied.)"
+    }
 
     await run("cd /root")
 
@@ -222,7 +272,12 @@ async function loadLevel(i) {
         await run(level.setup.replaceAll("FLAG", level["flag"]))
     }
 
-    document.getElementById("title").innerHTML = "Level " + (currentLevel + 1)
+    if (window.location.search == "") {
+        document.getElementById("title").innerHTML =
+            "Level " + (currentLevel + 1)
+    } else {
+        document.getElementById("title").innerHTML = "Custom level"
+    }
     document.getElementById("description").innerHTML =
         "<p>" + level.task + "</p>"
     if (level.tools) {
@@ -234,10 +289,10 @@ async function loadLevel(i) {
             ).innerHTML += `<a href="https://man7.org/linux/man-pages/man1/${tool}.1.html" target="_blank">${tool}</a> `
         }
     }
-    if (level.google) {
+    if (level.searches) {
         document.getElementById("description").innerHTML +=
             "<h3>Helpful Google searches</h3>"
-        for (let query of level.google) {
+        for (let query of level.searches) {
             document.getElementById(
                 "description"
             ).innerHTML += `<a href="https://www.google.com/search?q=${query}" target="_blank">${query}</a> `
@@ -269,4 +324,28 @@ document.getElementById("flag").onkeydown = async function (e) {
     if (e.key == "Enter") {
         document.getElementById("submit").click()
     }
+}
+
+document.getElementById("make-own").onclick = async function (e) {
+    document.getElementById("popup").style.display = "flex"
+}
+
+document.getElementById("popup-close").onclick = async function (e) {
+    document.getElementById("popup").style.display = "none"
+}
+
+document.getElementById("popup").onclick = async function (e) {
+    document.getElementById("popup").style.display = "none"
+}
+
+document.getElementById("popup-background").onclick = async function (e) {
+    e.stopPropagation()
+}
+
+document.getElementById("clear").onclick = async function (e) {
+    document.getElementById("level_task").value = ""
+    document.getElementById("level_setup").value = ""
+    document.getElementById("level_tools").value = ""
+    document.getElementById("level_searches").value = ""
+    document.getElementById("level_solution").value = ""
 }
