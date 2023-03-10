@@ -40,19 +40,19 @@ async function test(condition) {
 
 // Set emulator config.
 let config = {
-    wasm_path: "v86.wasm",
+    wasm_path: "lib/v86.wasm",
     memory_size: 64 * 1024 * 1024,
     vga_memory_size: 2 * 1024 * 1024,
     screen_container: document.getElementById("screen_container"),
-    bios: {url: "seabios.bin"},
-    vga_bios: {url: "vgabios.bin"},
-    cdrom: {url: "image.iso"},
+    bios: {url: "images/seabios.bin"},
+    vga_bios: {url: "images/vgabios.bin"},
+    cdrom: {url: "images/image.iso"},
     disable_mouse: true,
     autostart: true,
 }
 if (restoreState) {
     config.initial_state = {
-        url: "booted-state.bin.zst",
+        url: "images/booted-state.bin.zst",
     }
 }
 
