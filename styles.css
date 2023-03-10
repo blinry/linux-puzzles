@@ -12,8 +12,21 @@ body {
 
 h1,
 h2,
+#title_container {
+    margin-bottom: 2rem;
+}
+
 h3 {
-    margin-bottom: 0.5em;
+    margin-top: 1em;
+}
+
+h2 {
+    display: inline;
+}
+
+#subtitle {
+    font-size: 50%;
+    font-weight: normal;
 }
 
 p,
