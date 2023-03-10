@@ -1,3 +1,8 @@
+@font-face {
+    font-family: "Iosevka";
+    src: url("fonts/iosevka-regular.woff2");
+}
+
 body {
     display: flex;
     font-size: 120%;
@@ -49,9 +54,15 @@ p,
 
 #screen {
     white-space: pre;
-    font: 16px monospace;
-    line-height: 110%;
+    font-size: 16px;
+    font-family: "Iosevka", monospace;
+    line-height: 120%;
     transform: scale(1);
+}
+
+code {
+    font-family: "Iosevka", monospace;
+    color: #333;
 }
 
 #buttons {
@@ -71,6 +82,7 @@ p,
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     display: none; /* normally: flex */
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     z-index: 1;

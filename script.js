@@ -160,7 +160,7 @@ async function init() {
 let levels = []
 
 levels.push({
-    task: 'This is a real Linux, running entirely in your browser, powered by <a href="https://github.com/copy/v86" target="_blank">v86</a>!<br><br>Here\'s your first challenge: Read the file called <b>readme</b>, and paste its content in the box below.<br><br>If you\'re not using a QWERTY keyboard, you can set your keyboard layout like this: <code>loadkeys de</code>.',
+    task: 'This is a fully-functional Linux, running entirely in your browser, powered by <a href="https://github.com/copy/v86" target="_blank">v86</a>!<br><br>Here\'s your first challenge: Read the file called <b>readme</b>, and paste its content in the box below.<br><br>If you\'re not using a QWERTY keyboard, you can set your keyboard layout like this: <code>loadkeys de</code>.',
     setup: "echo FLAG > readme",
     tools: ["loadkeys", "ls", "cat"],
 })
@@ -175,6 +175,7 @@ levels.push({
     task: "Find and read the hidden file.",
     setup: "echo FLAG > .hidden",
     tools: ["ls", "cat"],
+    searches: ["linux hidden files"],
 })
 
 levels.push({
@@ -291,11 +292,11 @@ async function loadLevel(i) {
     }
     if (level.searches) {
         document.getElementById("description").innerHTML +=
-            "<h3>Helpful Google searches</h3>"
+            "<h3>Helpful web searches</h3>"
         for (let query of level.searches) {
             document.getElementById(
                 "description"
-            ).innerHTML += `<a href="https://www.google.com/search?q=${query}" target="_blank">${query}</a> `
+            ).innerHTML += `<a href="https://duckduckgo.com/?q=${query}" target="_blank">${query}</a> `
         }
     }
     document.getElementById("flag").value = ""
