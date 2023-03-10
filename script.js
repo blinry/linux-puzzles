@@ -122,7 +122,7 @@ async function init() {
 let levels = []
 
 levels.push({
-    task: "If you're not using a QWERTY keyboard, you can set your keyboard layout like this: <code>loadkeys de</code>. To find the first solution, read the file called <b>readme</b>.",
+    task: "This is a prototype for building Linux tutorials in the browser. The terminal is running entirely in your browser!<br><br>We give you a number of challenges! To find the first solution, read the file called <b>readme</b>, and submit the content in the box below.<br><br>If you're not using a QWERTY keyboard, you can set your keyboard layout like this: <code>loadkeys de</code>.",
     setup: "echo FLAG > readme",
     tools: ["loadkeys", "ls", "cat"],
 })
@@ -140,7 +140,7 @@ levels.push({
 })
 
 levels.push({
-    task: "Read the file called <b>-</b>.",
+    task: "Read the file called <b>-</b>",
     setup: "echo FLAG > -",
     tools: ["ls", "cat"],
     google: ["filename with dash"],
@@ -188,6 +188,12 @@ levels.push({
     tools: ["uname"],
 })
 
+levels.push({
+    task: "That's all the levels there are. This is mostly meant as a technical demo.<br><br>Because this Linux runs in a VM, you can try more things with it, without breaking anything.<br><br>For example, didn't you always want to try running <code>rm -rf /</code>? How much can you actually delete? What should you delete last? :D Good luck!<br><br>You can use the arrow buttons at the top to change to other levels.",
+    solution: "echo unknowable",
+    tools: ["lsof", "ps", "kill"],
+})
+
 let currentLevel = -1
 
 async function nextLevel() {
@@ -220,7 +226,7 @@ async function loadLevel(i) {
         "<p>" + level.task + "</p>"
     if (level.tools) {
         document.getElementById("description").innerHTML +=
-            "<h3>Useful tools:</h3>"
+            "<h3>Help pages for the tools:</h3>"
         for (let tool of level.tools) {
             document.getElementById(
                 "description"
