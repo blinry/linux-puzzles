@@ -160,7 +160,7 @@ async function init() {
 let levels = []
 
 levels.push({
-    task: 'This is a fully-functional Linux, running entirely in your browser, powered by <a href="https://github.com/copy/v86" target="_blank">v86</a>!<br><br>Here\'s your first challenge: Read the file called <b>readme</b>, and paste its content in the box below.<br><br>If you\'re not using a QWERTY keyboard, you can set your keyboard layout like this: <code>loadkeys de</code>.',
+    task: 'This is a fully-functional Linux, running entirely in your browser, powered by <a href="https://github.com/copy/v86" target="_blank">v86</a>!<br><br>Here\'s your first challenge: Read the file called <b>readme</b>, and copy-paste its content in the box below.<br><br>If you\'re not using a QWERTY keyboard, you can set your keyboard layout like this: <code>loadkeys de</code>.',
     setup: "echo FLAG > readme",
     tools: ["loadkeys", "ls", "cat"],
 })
@@ -229,7 +229,7 @@ levels.push({
 })
 
 levels.push({
-    task: "Well done, you solved all levels of this technical demo!<br><br>Because this Linux runs in a VM, you can try more things, without breaking anything.<br><br>For example, didn't you always want to try running <code>rm -rf /</code>? How much can you actually delete? What should you delete last? :D Good luck!<br><br>You can use the arrow buttons at the top to change to other levels.",
+    task: "Well done, you solved all levels of this technical demo!<br><br>Because this Linux runs in a VM, you can try more things, without breaking anything.<br><br>For example, didn't you always want to try running <code>rm -rf /</code>? How much can you actually delete? What should you delete last? :D Good luck!<br><br>You can use the arrow buttons at the top to change to other levels. And you can click on 'Customize this level' below to make your own levels!!",
     solution: "echo unknowable",
     tools: ["lsof", "ps", "kill"],
 })
