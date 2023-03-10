@@ -1,6 +1,9 @@
+// Whether or not to restore the VM state from a file. Set to false to perform a regular boot.
 let restoreState = true
-let emulator
 
+// Run a command via the serial port (/dev/ttyS0) and return the output.
+// This is not the same console as displayed in the browser (that's /dev/console).
+// This function is available from the console!
 function run(cmd) {
     emulator.serial0_send(cmd + "\n")
 
@@ -10,10 +13,6 @@ function run(cmd) {
             if (char !== "\r") {
                 output += char
             }
-
-            //document.getElementById("output").textContent += char
-            document.getElementById("output").scrollTop =
-                document.getElementById("output").scrollHeight
 
             if (output.endsWith("# ")) {
                 emulator.remove_listener("serial0-output-char", listener)
@@ -33,63 +32,43 @@ function run(cmd) {
 }
 window.run = run
 
+// Run a test command and return true if the exit code is 0, false otherwise.
 async function test(condition) {
     let result = await run(`test ${condition} && echo 'yes' || echo 'no'`)
     return result == "yes"
 }
 
-window.onload = function () {
-    let config = {
-        wasm_path: "v86.wasm",
-        memory_size: 64 * 1024 * 1024,
-        vga_memory_size: 2 * 1024 * 1024,
-        screen_container: document.getElementById("screen_container"),
-        serial_container_xtermjs: document.getElementById("output"),
-        bios: {
-            url: "seabios.bin",
-        },
-        vga_bios: {
-            url: "vgabios.bin",
-        },
-        cdrom: {
-            url: "image.iso",
-        },
-        disable_mouse: true,
-        autostart: true,
-    }
-
-    if (restoreState) {
-        config.initial_state = {
-            url: "booted-state.bin.zst",
-        }
-    }
-
-    emulator = window.emulator = new V86Starter(config)
-    // check if the emulator is running every 100 ms. If it is, call run() and stop the checking
-    var interval = setInterval(() => {
-        if (emulator.is_running()) {
-            clearInterval(interval)
-            init()
-        }
-    }, 100)
-
-    async function init() {
-        await nextLevel()
-    }
-
-    var data = ""
-
-    document.getElementById("command").onkeydown = async function (e) {
-        if (e.which == 13) {
-            var code = document.getElementById("command").value
-            document.getElementById("command").value = ""
-            run(code)
-        }
+// Set emulator config.
+let config = {
+    wasm_path: "v86.wasm",
+    memory_size: 64 * 1024 * 1024,
+    vga_memory_size: 2 * 1024 * 1024,
+    screen_container: document.getElementById("screen_container"),
+    bios: {url: "seabios.bin"},
+    vga_bios: {url: "vgabios.bin"},
+    cdrom: {url: "image.iso"},
+    disable_mouse: true,
+    autostart: true,
+}
+if (restoreState) {
+    config.initial_state = {
+        url: "booted-state.bin.zst",
     }
 }
 
-var state
+// Start the emulator!
+var emulator = (window.emulator = new V86Starter(config))
 
+// Wait for the emulator to start, then run init().
+var interval = setInterval(() => {
+    if (emulator.is_running()) {
+        clearInterval(interval)
+        init()
+    }
+}, 100)
+
+// Allow saving and restoring the state using the buttons below the console.
+var state
 document.getElementById("save_restore").onclick = async function () {
     var button = this
 
@@ -106,7 +85,6 @@ document.getElementById("save_restore").onclick = async function () {
 
     button.blur()
 }
-
 document.getElementById("save_file").onclick = async function () {
     const new_state = await emulator.save_state()
     var a = document.createElement("a")
@@ -118,7 +96,6 @@ document.getElementById("save_file").onclick = async function () {
 
     this.blur()
 }
-
 document.getElementById("restore_file").onchange = function () {
     if (this.files.length) {
         var filereader = new FileReader()
@@ -135,6 +112,11 @@ document.getElementById("restore_file").onchange = function () {
     }
 
     this.blur()
+}
+
+// This is run after the emulator loads.
+async function init() {
+    await nextLevel()
 }
 
 let levels = []
@@ -222,7 +204,6 @@ async function loadLevel(i) {
     let level = levels[i]
 
     await run("cd /root")
-    //await run("rm -rf .* *")
 
     if (level.solution) {
         level["flag"] = await run(level.solution)
@@ -241,7 +222,6 @@ async function loadLevel(i) {
         document.getElementById("description").innerHTML +=
             "<h3>Useful tools:</h3>"
         for (let tool of level.tools) {
-            // link to https://man7.org/linux/man-pages/man1/TOOL.1.html
             document.getElementById(
                 "description"
             ).innerHTML += `<a href="https://man7.org/linux/man-pages/man1/${tool}.1.html" target="_blank">${tool}</a> `
@@ -274,7 +254,7 @@ document.getElementById("submit").onclick = async function () {
         alert("Correct :) Let's go to the next level!")
         await nextLevel()
     } else {
-        alert("Wrong solution. Correct solution: " + level.flag)
+        alert("Wrong solution.")
     }
 }
 

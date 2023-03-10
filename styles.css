@@ -77,16 +77,25 @@ p,
 
 #screen_container {
     background: black;
-    width: 1000px;
-    height: 700px;
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 1rem;
+    border-radius: 1rem;
 }
 
 #screen {
     white-space: pre;
     font: 16px monospace;
     line-height: 110%;
-    transform: scale(1.5);
+    transform: scale(1);
+}
+
+#buttons {
+    margin: 0.5rem;
+    font-size: 60%;
+}
+
+#output {
+    height: 20rem;
 }
