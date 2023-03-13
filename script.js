@@ -187,7 +187,7 @@ levels.push({
 
 levels.push({
     task: "Find the only line in <b>haystack</b> that occurs twice.",
-    setup: `seq 1 5 | xargs -I{} sh -c "echo {} | md5sum | cut -d' ' -f1 >> haystack"
+    setup: `seq 1 5 | xargs -I{} sh -c "echo {} | md5sum | cut -d' ' -f1 > haystack"
                 echo FLAG >> haystack
                 seq 10 17 | xargs -I{} sh -c "echo {} | md5sum | cut -d' ' -f1 >> haystack"
                 echo FLAG >> haystack
